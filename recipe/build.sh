@@ -5,6 +5,8 @@ set -ex
 if [[ "${mpi}" != "nompi" ]]; then
   CC="${PREFIX}/bin/mpicc"
   FC="${PREFIX}/bin/mpifort"
+  OMPI_CC=${CC}
+  OMPI_FC=${FC}
 fi
 
 # Build shared library libtrexio with HDF5 support
