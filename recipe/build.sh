@@ -1,48 +1,18 @@
 #!/bin/bash
-# Get an updated config.sub and config.guess
-cp $BUILD_PREFIX/share/gnuconfig/config.* .
-cp $BUILD_PREFIX/share/gnuconfig/config.* ./build-config
-
-#set -e
-set -x
-
-# Get an updated config.sub and config.guess
-cp ${BUILD_PREFIX}/share/gnuconfig/config.* .
+set -ex
 
 # Set MPI compilers for parallel builds
-if [[ ! -z "$mpi" && "$mpi" != "nompi" ]]; then
+if [[ "${mpi}" != "nompi" ]]; then
   export CC=mpicc
   export FC=mpifort
-  mpiexec="mpiexec --allow-run-as-root"
-  # for cross compiling using openmpi
-  export OPAL_PREFIX=$PREFIX
-else
-  export CC=$(basename ${CC})
-  export FC=$(basename ${FC})
 fi
 
-# Adapted from libnetcdf-feedstock to fix issue with CMake and sysroot
-declare -a CMAKE_PLATFORM_FLAGS
-if [[ ${HOST} =~ .*darwin.* ]]; then
-  CMAKE_PLATFORM_FLAGS+=(-DCMAKE_OSX_SYSROOT="${CONDA_BUILD_SYSROOT}")
-else
-  CMAKE_PLATFORM_FLAGS+=(-DCMAKE_TOOLCHAIN_FILE="${RECIPE_DIR}/cross-linux.cmake")
+# Build shared library libtrexio with HDF5 support
+cmake -B build -S . ${CMAKE_ARGS} -GNinja -DENABLE_HDF5="ON"
+cmake --build build --parallel "${CPU_COUNT}"
+cmake --install build
+
+# Run tests if no cross-compilation was performed
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" || -n "${CROSSCOMPILING_EMULATOR}" ]]; then
+  ctest --test-dir build --output-on-failure -j${CPU_COUNT}
 fi
-
-
-# Build shared library libtrexio
-cmake ${CMAKE_ARGS} -DCMAKE_INSTALL_PREFIX=${PREFIX} \
-      -DCMAKE_INSTALL_LIBDIR="lib" \
-      -DCMAKE_PREFIX_PATH=${PREFIX} \
-      -DENABLE_HDF5=ON \
-      -DBUILD_SHARED_LIBS=ON \
-      ${CMAKE_PLATFORM_FLAGS[@]} \
-      ${SRC_DIR}
-
-make -j${CPU_COUNT} ${VERBOSE_CM}
-make install
-
-if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" || "${CROSSCOMPILING_EMULATOR}" != "" ]]; then
-ctest -VV --output-on-failure -j${CPU_COUNT} || true
-fi
-

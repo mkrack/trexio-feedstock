@@ -1,33 +1,16 @@
 {% set name = "trexio" %}
 {% set version = "2.6.1" %}
-{% set build = 0 %}
+{% set build = 1 %}
 
-# recipe-lint fails if mpi is undefined
-{% set mpi = mpi or 'nompi' %}
 {% if mpi == "nompi" %}
-# prioritize nompi via build number
-{% set build = build + 100 %}
+  # Prioritize nompi via build number
+  {% set build = build + 100 %}
 {% endif %}
 
 {% if mpi != "nompi" %}
-{% set mpi_prefix = "mpi_" + mpi %}
+  {% set mpi_prefix = "mpi_" + mpi %}
 {% else %}
-{% set mpi_prefix = "nompi" %}
-{% endif %}
-# add build string so packages can depend on
-# mpi or nompi variants
-# dependencies:
-# `PKG_NAME * mpi_mpich_*` for mpich
-# `PKG_NAME * mpi_*` for any mpi
-# `PKG_NAME * nompi_*` for no mpi
-
-# mpi builds require the right mpi
-# non-mpi builds *do not* appear to require non-mpi builds
-# at least not always
-{% if mpi != 'nompi' %}
-{% set build_pin = mpi_prefix + '_*' %}
-{% else %}
-{% set build_pin = '' %}
+  {% set mpi_prefix = "nompi" %}
 {% endif %}
 
 package:
@@ -43,23 +26,23 @@ build:
   skip: true  # [win]
   string: {{ mpi_prefix }}_h{{ PKG_HASH }}_{{ build }}
   run_exports:
-    - {{ pin_subpackage('trexio', max_pin='x.x.x') }} {{ build_pin }}
+    - {{ pin_subpackage("trexio", max_pin="x.x") }}
 
 requirements:
   build:
-    - gnuconfig  # [unix]
-    - {{ compiler('c') }}
+    - {{ compiler("c") }}
     - {{ stdlib("c") }}
-    - {{ compiler('fortran') }}
-    - {{ mpi }}  # [mpi == 'openmpi' and build_platform != target_platform]
+    - {{ compiler("fortran") }}
+    - {{ mpi }}  # [mpi != "nompi" and build_platform != target_platform]
     - cmake
-    - gnuconfig
-    - make
+    - ninja
     - pkg-config
-
   host:
-    - hdf5  # [mpi == 'nompi']
-    - hdf5 * {{ mpi_prefix }}_*  # [mpi != 'nompi']
+    - {{ mpi }}  # [mpi != "nompi"]
+    - hdf5 >=2.1  # [mpi == "nompi"]
+    - "hdf5 * {{ mpi_prefix }}_*"  # [mpi != "nompi"]
+  run:
+    - {{ mpi }}  # [mpi != "nompi"]
 
 test:
   commands:
@@ -73,8 +56,8 @@ about:
   license_file: COPYING
   summary: TREX library for efficient I/O
   description: |
-    The TREXIO library defines a standard format for storing wave functions, 
-    together with an C-compatible API such that it can be easily used in 
+    The TREXIO library defines a standard format for storing wave functions,
+    together with an C-compatible API such that it can be easily used in
     any programming language.
   doc_url: https://trex-coe.github.io/trexio/
   dev_url: https://github.com/TREX-CoE/trexio
@@ -82,3 +65,4 @@ about:
 extra:
   recipe-maintainers:
     - q-posev
+    - mkrack
