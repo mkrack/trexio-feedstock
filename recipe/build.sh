@@ -3,15 +3,19 @@ set -ex
 
 declare -a EXTRA_CMAKE_ARGS
 
-# Configure MPI variables without hijacking CC and FC
-if [[ "${mpi}" != "nompi" ]]; then
-  # Tell OpenMPI wrappers which underlying compilers to wrap if called
-  export OMPI_CC="${CC}"
-  export OMPI_FC="${FC}"
-  # Force CMake to find the specific Conda MPI installation
+# Only execute the MPI short-circuit if we are actively cross-compiling
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" && "${mpi}" != "nompi" ]]; then
+  # Determine native library extensions dynamically (.dylib for macOS, .so for Linux)
+  LIB_EXT="so"
+  [[ "${target_platform}" == osx-* ]] && LIB_EXT="dylib"
+  # Blindly force CMake to bypass MPI compiler runtime execution verification
   EXTRA_CMAKE_ARGS+=(
-    -DMPI_C_COMPILER="${PREFIX}/bin/mpicc"
-    -DMPI_Fortran_COMPILER="${PREFIX}/bin/mpifort"
+    -DMPI_C_FOUND=TRUE
+    -DMPI_Fortran_FOUND=TRUE
+    -DMPI_C_INCLUDE_DIRS="${PREFIX}/include"
+    -DMPI_Fortran_INCLUDE_DIRS="${PREFIX}/include"
+    -DMPI_C_LIBRARIES="${PREFIX}/lib/libmpi.${LIB_EXT}"
+    -DMPI_Fortran_LIBRARIES="${PREFIX}/lib/libmpi_usempif08.${LIB_EXT};${PREFIX}/lib/libmpi_usempi_ignore_tkr.${LIB_EXT};${PREFIX}/lib/libmpi_mpifh.${LIB_EXT};${PREFIX}/lib/libmpi.${LIB_EXT}"
   )
 fi
 
@@ -28,7 +32,7 @@ cmake -B build -S . \
 cmake --build build --parallel "${CPU_COUNT}"
 cmake --install build
 
-# Run tests if no cross-compilation was performed
+# Safely drop downstream testing execution during cross-compilation
 if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" ]]; then
   ctest --test-dir build --output-on-failure -j"${CPU_COUNT}"
 fi
