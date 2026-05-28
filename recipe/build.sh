@@ -3,12 +3,15 @@ set -ex
 
 # Set MPI compilers for parallel builds
 if [[ "${mpi}" != "nompi" ]]; then
-  export CC=mpicc
-  export FC=mpifort
+  CC="${PREFIX}/bin/mpicc"
+  FC="${PREFIX}/bin/mpifort"
 fi
 
 # Build shared library libtrexio with HDF5 support
-cmake -B build -S . ${CMAKE_ARGS} -GNinja -DENABLE_HDF5="ON"
+cmake -B build -S . \
+  ${CMAKE_ARGS} \
+  -GNinja \
+  -DENABLE_HDF5="ON"
 cmake --build build --parallel "${CPU_COUNT}"
 cmake --install build
 

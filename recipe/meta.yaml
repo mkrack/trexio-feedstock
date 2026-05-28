@@ -41,6 +41,7 @@ requirements:
     - {{ mpi }}  # [mpi != "nompi"]
     - hdf5 >=2.1  # [mpi == "nompi"]
     - "hdf5 * {{ mpi_prefix }}_*"  # [mpi != "nompi"]
+    - zlib
   run:
     - {{ mpi }}  # [mpi != "nompi"]
 
