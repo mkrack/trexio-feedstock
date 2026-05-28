@@ -1,21 +1,17 @@
 #!/bin/bash
 set -ex
 
-# Set MPI compilers for parallel builds
-if [[ "${mpi}" != "nompi" ]]; then
-  CC="${PREFIX}/bin/mpicc"
-  FC="${PREFIX}/bin/mpifort"
-  OMPI_CC=${CC}
-  OMPI_FC=${FC}
-fi
-
-# Set cross-compilation overrides to bypass execution checks
 declare -a EXTRA_CMAKE_ARGS
-if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" ]]; then
+
+# Configure MPI variables without hijacking CC and FC
+if [[ "${mpi}" != "nompi" ]]; then
+  # Tell OpenMPI wrappers which underlying compilers to wrap if called
+  export OMPI_CC="${CC}"
+  export OMPI_FC="${FC}"
+  # Force CMake to find the specific Conda MPI installation
   EXTRA_CMAKE_ARGS+=(
-    -DCMAKE_CROSSCOMPILING=TRUE
-    -DCMAKE_C_COMPILER_WORKS=1
-    -DCMAKE_Fortran_COMPILER_WORKS=1
+    -DMPI_C_COMPILER="${PREFIX}/bin/mpicc"
+    -DMPI_Fortran_COMPILER="${PREFIX}/bin/mpifort"
   )
 fi
 
@@ -23,13 +19,16 @@ fi
 cmake -B build -S . \
   ${CMAKE_ARGS} \
   "${EXTRA_CMAKE_ARGS[@]}" \
-  -GNinja \
-  -DENABLE_HDF5="ON"
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER="${CC}" \
+  -DCMAKE_Fortran_COMPILER="${FC}" \
+  -DENABLE_HDF5="ON" \
+  -GNinja
 
 cmake --build build --parallel "${CPU_COUNT}"
 cmake --install build
 
 # Run tests if no cross-compilation was performed
-if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" || -n "${CROSSCOMPILING_EMULATOR}" ]]; then
-  ctest --test-dir build --output-on-failure -j${CPU_COUNT}
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" ]]; then
+  ctest --test-dir build --output-on-failure -j"${CPU_COUNT}"
 fi
