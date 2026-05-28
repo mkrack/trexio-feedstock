@@ -33,7 +33,6 @@ requirements:
     - {{ compiler("c") }}
     - {{ stdlib("c") }}
     - {{ compiler("fortran") }}
-    - {{ mpi }}  # [mpi != "nompi" and build_platform != target_platform]
     - cmake
     - ninja
     - pkg-config

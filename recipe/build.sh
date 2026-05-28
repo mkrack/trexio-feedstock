@@ -9,11 +9,23 @@ if [[ "${mpi}" != "nompi" ]]; then
   OMPI_FC=${FC}
 fi
 
+# Set cross-compilation overrides to bypass execution checks
+declare -a EXTRA_CMAKE_ARGS
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" ]]; then
+  EXTRA_CMAKE_ARGS+=(
+    -DCMAKE_CROSSCOMPILING=TRUE
+    -DCMAKE_C_COMPILER_WORKS=1
+    -DCMAKE_Fortran_COMPILER_WORKS=1
+  )
+fi
+
 # Build shared library libtrexio with HDF5 support
 cmake -B build -S . \
   ${CMAKE_ARGS} \
+  "${EXTRA_CMAKE_ARGS[@]}" \
   -GNinja \
   -DENABLE_HDF5="ON"
+
 cmake --build build --parallel "${CPU_COUNT}"
 cmake --install build
 
