@@ -5,17 +5,14 @@ declare -a EXTRA_CMAKE_ARGS
 
 # Only execute the MPI short-circuit if we are actively cross-compiling
 if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" == "1" && "${mpi}" != "nompi" ]]; then
-  # Determine native library extensions dynamically (.dylib for macOS, .so for Linux)
-  LIB_EXT="so"
-  [[ "${target_platform}" == osx-* ]] && LIB_EXT="dylib"
   # Blindly force CMake to bypass MPI compiler runtime execution verification
   EXTRA_CMAKE_ARGS+=(
     -DMPI_C_FOUND=TRUE
     -DMPI_Fortran_FOUND=TRUE
     -DMPI_C_INCLUDE_DIRS="${PREFIX}/include"
     -DMPI_Fortran_INCLUDE_DIRS="${PREFIX}/include"
-    -DMPI_C_LIBRARIES="${PREFIX}/lib/libmpi.${LIB_EXT}"
-    -DMPI_Fortran_LIBRARIES="${PREFIX}/lib/libmpi_usempif08.${LIB_EXT};${PREFIX}/lib/libmpi_usempi_ignore_tkr.${LIB_EXT};${PREFIX}/lib/libmpi_mpifh.${LIB_EXT};${PREFIX}/lib/libmpi.${LIB_EXT}"
+    -DMPI_C_LIBRARIES="${PREFIX}/lib/libmpi${SHLIB_EXT}"
+    -DMPI_Fortran_LIBRARIES="${PREFIX}/lib/libmpi_usempif08${SHLIB_EXT};${PREFIX}/lib/libmpi_usempi_ignore_tkr${SHLIB_EXT};${PREFIX}/lib/libmpi_mpifh${SHLIB_EXT};${PREFIX}/lib/libmpi${SHLIB_EXT}"
   )
 fi
 

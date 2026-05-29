@@ -33,7 +33,7 @@ requirements:
     - {{ compiler("c") }}
     - {{ stdlib("c") }}
     - {{ compiler("fortran") }}
-    - {{ mpi }}  # [mpi != "nompi" and cbc_build_config != "osx_arm64"]
+    - {{ mpi }}  # [mpi != "nompi"]
     - cmake
     - ninja
     - pkg-config
@@ -66,4 +66,3 @@ about:
 extra:
   recipe-maintainers:
     - q-posev
-    - mkrack
