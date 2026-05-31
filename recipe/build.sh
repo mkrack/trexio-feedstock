@@ -30,6 +30,6 @@ cmake --build build --parallel "${CPU_COUNT}"
 cmake --install build
 
 # Safely drop downstream testing execution during cross-compilation
-if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" ]]; then
+if [[ "${CONDA_BUILD_CROSS_COMPILATION:-}" != "1" || "${CROSSCOMPILING_EMULATOR}" != "" ]]; then
   ctest --test-dir build --output-on-failure -j"${CPU_COUNT}"
 fi
