@@ -1,6 +1,6 @@
 {% set name = "trexio" %}
 {% set version = "2.6.1" %}
-{% set build = 1 %}
+{% set build = 2 %}
 
 {% if mpi == "nompi" %}
   # Prioritize nompi via build number
