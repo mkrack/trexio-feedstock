@@ -17,7 +17,6 @@ The TREXIO library defines a standard format for storing wave functions,
 together with an C-compatible API such that it can be easily used in
 any programming language.
 
-
 Current build status
 ====================
 
