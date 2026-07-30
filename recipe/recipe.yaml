@@ -1,12 +1,12 @@
 schema_version: 1
 
 context:
-  name: trexio
-  version: 2.6.1
+  name: "trexio"
+  version: "2.6.1"
   mpi_prefix: ${{ "nompi" if mpi == "nompi" else "mpi_" + mpi }}
 
 package:
-  name: trexio
+  name: ${{ name }}
   version: ${{ version }}
 
 source:
