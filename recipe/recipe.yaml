@@ -1,0 +1,65 @@
+schema_version: 1
+
+context:
+  name: "trexio"
+  version: "2.6.1"
+  mpi_prefix: ${{ "nompi" if mpi == "nompi" else "mpi_" + mpi }}
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+source:
+  url: https://github.com/TREX-CoE/trexio/releases/download/v${{ version }}/${{ name }}-${{ version }}.tar.gz
+  sha256: c3694ec1528632a386a2af89199c75d70ecd45bfcc2ca1d4ccccbfa1308ad5fa
+
+build:
+  # Prioritize nompi via build number
+  number: ${{ 4 + (100 if mpi == "nompi" else 0) }}
+  skip:
+    - win
+  string: mpi_${{ mpi }}_h${{ hash }}_${{ build_number }}
+
+requirements:
+  build:
+    - ${{ compiler("c") }}
+    - ${{ compiler("fortran") }}
+    - if: mpi != "nompi"
+      then: ${{ mpi }}
+    - cmake
+    - ninja
+    - pkg-config
+  host:
+    - if: mpi == "nompi"
+      then: hdf5 >=2.1
+      else:
+        - ${{ mpi }}
+        - "hdf5 * ${{ mpi_prefix }}_*"
+    - zlib
+  run:
+    - if: mpi != "nompi"
+      then: ${{ mpi }}
+
+tests:
+  - package_contents:
+      include:
+        - ${{ name }}.h
+      lib:
+        - lib${{ name }}
+
+about:
+  homepage: https://github.com/TREX-CoE/trexio
+  license: BSD-3-Clause
+  license_file: COPYING
+  summary: TREX library for efficient I/O
+  description: |
+    The TREXIO library defines a standard format for storing wave functions,
+    together with an C-compatible API such that it can be easily used in
+    any programming language.
+  documentation: https://trex-coe.github.io/trexio/
+  repository: https://github.com/TREX-CoE/trexio
+
+extra:
+  recipe-maintainers:
+    - q-posev
+    - mkrack
